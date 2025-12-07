@@ -10,6 +10,7 @@ A real-time collaborative coding interview platform built with React, Express, a
 - ▶️ **Run Code in Browser** - Execute JavaScript and Python directly in the browser
 - 📟 **Shared Console** - Execution output is synchronized across all session participants
 - 🐍 **Python via Pyodide** - Full Python runtime compiled to WebAssembly (runs in browser)
+- 👁️ **Presence Tracking** - See how many users are connected and if they are active/focused
 - 🌐 **Multiple Languages** - Support for JavaScript, Python, and more
 - 🎨 **Dark/Light Theme** - Toggle between themes with localStorage persistence
 - ⚡ **Instant Updates** - Changes appear immediately for all connected users

@@ -1,0 +1,56 @@
+/**
+ * PresenceIndicator Component Styles
+ */
+
+.presence-indicator {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  background: var(--color-bg-tertiary);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+  font-size: 0.85rem;
+  color: var(--color-text-secondary);
+  cursor: help;
+  transition: all var(--transition-fast);
+}
+
+.presence-indicator:hover {
+  background: var(--color-bg-elevated);
+  border-color: var(--color-border-hover);
+}
+
+.presence-indicator__count {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.presence-indicator__count svg {
+  color: var(--color-text-muted);
+}
+
+.presence-indicator__status {
+  display: flex;
+  align-items: center;
+  margin-left: var(--space-1);
+}
+
+.presence-indicator__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  transition: background-color var(--transition-fast);
+}
+
+.presence-indicator__status--all-active .presence-indicator__dot {
+  background-color: var(--color-success);
+  box-shadow: 0 0 4px var(--color-success);
+}
+
+.presence-indicator__status--some-inactive .presence-indicator__dot {
+  background-color: var(--color-warning);
+}
+
+/* Tooltip implementation could be added here or via title attribute */

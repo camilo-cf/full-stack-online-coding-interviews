@@ -22,6 +22,7 @@ const SOCKET_URL = '/';
  * @param {Function} callbacks.onCodeUpdate - Called when code changes from other clients
  * @param {Function} callbacks.onLanguageUpdate - Called when language changes from other clients
  * @param {Function} callbacks.onOutputUpdate - Called when execution output changes from other clients
+ * @param {Function} callbacks.onPresenceUpdate - Called when user presence/activity changes
  * @param {Function} callbacks.onError - Called when an error occurs
  */
 export function useSocket(sessionId, callbacks) {
@@ -90,6 +91,11 @@ export function useSocket(sessionId, callbacks) {
       callbacksRef.current.onOutputUpdate?.(data);
     });
 
+    socket.on('presence-update', (data) => {
+      // Don't log every update as it can be frequent
+      callbacksRef.current.onPresenceUpdate?.(data);
+    });
+
     socket.on('error', (data) => {
       console.error('[useSocket] Server error:', data.message);
       callbacksRef.current.onError?.(data.message);
@@ -130,11 +136,21 @@ export function useSocket(sessionId, callbacks) {
     }
   }, [sessionId]);
 
+  /**
+   * Emit activity status change
+   */
+  const emitActivityChange = useCallback((isActive) => {
+    if (socketRef.current?.connected) {
+      socketRef.current.emit('activity-change', { sessionId, isActive });
+    }
+  }, [sessionId]);
+
   return {
     isConnected,
     connectionError,
     emitCodeChange,
     emitLanguageChange,
-    emitOutputChange
+    emitOutputChange,
+    emitActivityChange
   };
 }

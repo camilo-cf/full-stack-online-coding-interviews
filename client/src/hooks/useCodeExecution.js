@@ -198,11 +198,8 @@ sys.stderr = _stdout_capture
       let output = stdout;
       
       // If there's a result and no stdout, show the result
-      if (result !== undefined && result !== null && !stdout.trim()) {
-        const resultStr = pyodide.runPython(`repr(${code.split('\n').pop()})`);
-        if (resultStr && resultStr !== 'None') {
-          output = resultStr;
-        }
+      if (result !== undefined && result !== null && (!output || !output.trim())) {
+         output = result.toString();
       }
       
       return { success: true, output: output || '(No output)' };

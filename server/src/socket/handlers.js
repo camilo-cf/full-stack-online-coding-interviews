@@ -14,6 +14,37 @@ import {
   sessionExists 
 } from '../store/sessionStore.js';
 
+// Track active users per session
+const sessionPresence = new Map(); // sessionId -> Map<socketId, { isActive: boolean, joinedAt: Date }>
+
+/**
+ * Get presence info for a session
+ */
+function getSessionPresence(sessionId) {
+  const users = sessionPresence.get(sessionId);
+  if (!users) return { userCount: 0, users: [] };
+  
+  const userList = Array.from(users.entries()).map(([id, data]) => ({
+    id: id.slice(0, 8), // Shortened ID for privacy
+    isActive: data.isActive,
+    joinedAt: data.joinedAt
+  }));
+  
+  return {
+    userCount: users.size,
+    activeCount: userList.filter(u => u.isActive).length,
+    users: userList
+  };
+}
+
+/**
+ * Broadcast presence update to all clients in a session
+ */
+function broadcastPresence(io, sessionId) {
+  const presence = getSessionPresence(sessionId);
+  io.to(sessionId).emit('presence-update', presence);
+}
+
 /**
  * Register all Socket.IO event handlers
  * @param {Server} io - Socket.IO server instance
@@ -48,12 +79,31 @@ export function registerSocketHandlers(io) {
       // Leave previous session if any
       if (currentSessionId) {
         socket.leave(currentSessionId);
+        // Remove from presence
+        const prevUsers = sessionPresence.get(currentSessionId);
+        if (prevUsers) {
+          prevUsers.delete(socket.id);
+          if (prevUsers.size === 0) {
+            sessionPresence.delete(currentSessionId);
+          } else {
+            broadcastPresence(io, currentSessionId);
+          }
+        }
         console.log(`[Socket] Client ${socket.id} left session: ${currentSessionId}`);
       }
       
       // Join the new session room
       socket.join(sessionId);
       currentSessionId = sessionId;
+      
+      // Add to presence tracking
+      if (!sessionPresence.has(sessionId)) {
+        sessionPresence.set(sessionId, new Map());
+      }
+      sessionPresence.get(sessionId).set(socket.id, {
+        isActive: true,
+        joinedAt: new Date()
+      });
       
       // Get current session state
       const session = getSession(sessionId);
@@ -65,6 +115,9 @@ export function registerSocketHandlers(io) {
         code: session.code,
         language: session.language
       });
+      
+      // Broadcast updated presence to all clients
+      broadcastPresence(io, sessionId);
     });
 
     /**
@@ -146,11 +199,41 @@ export function registerSocketHandlers(io) {
     });
 
     /**
+     * Handle activity status change (tab visibility)
+     * Client sends: { sessionId: string, isActive: boolean }
+     */
+    socket.on('activity-change', (data) => {
+      const { sessionId, isActive } = data;
+      
+      if (!sessionId || isActive === undefined) return;
+      
+      const users = sessionPresence.get(sessionId);
+      if (users && users.has(socket.id)) {
+        const userData = users.get(socket.id);
+        userData.isActive = isActive;
+        
+        // Broadcast update
+        broadcastPresence(io, sessionId);
+      }
+    });
+
+    /**
      * Handle client disconnect
      */
     socket.on('disconnect', () => {
       console.log(`[Socket] Client disconnected: ${socket.id}`);
       if (currentSessionId) {
+        // Remove from presence tracking
+        const users = sessionPresence.get(currentSessionId);
+        if (users) {
+          users.delete(socket.id);
+          if (users.size === 0) {
+            sessionPresence.delete(currentSessionId);
+          } else {
+            broadcastPresence(io, currentSessionId);
+          }
+        }
+        
         console.log(`[Socket] Client ${socket.id} left session on disconnect: ${currentSessionId}`);
       }
     });

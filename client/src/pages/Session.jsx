@@ -8,7 +8,7 @@
  * - Connection status indicator
  * - Share link functionality
  */
-import { useState, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useSocket } from '../hooks/useSocket.js';
 import { useTheme } from '../hooks/useTheme.js';
@@ -17,6 +17,7 @@ import CodeEditor from '../components/CodeEditor.jsx';
 import LanguageSelector from '../components/LanguageSelector.jsx';
 import ThemeToggle from '../components/ThemeToggle.jsx';
 import OutputPanel from '../components/OutputPanel.jsx';
+import PresenceIndicator from '../components/PresenceIndicator.jsx';
 import './Session.css';
 
 function Session() {
@@ -34,6 +35,9 @@ function Session() {
   const [displayError, setDisplayError] = useState(null);
   const [isRemoteOutput, setIsRemoteOutput] = useState(false);
   const [remoteIsRunning, setRemoteIsRunning] = useState(false);
+  
+  // Presence state
+  const [presence, setPresence] = useState({ userCount: 0, activeCount: 0, users: [] });
   
   // Code execution hook (client-side only)
   const {
@@ -71,6 +75,11 @@ function Session() {
     setDisplayError(data.error || null);
     setIsRemoteOutput(true);
     setRemoteIsRunning(data.isRunning || false);
+    setRemoteIsRunning(data.isRunning || false);
+  }, []);
+
+  const handlePresenceUpdate = useCallback((data) => {
+    setPresence(data);
   }, []);
 
   const handleError = useCallback((message) => {
@@ -78,16 +87,49 @@ function Session() {
   }, []);
 
   // Connect to socket
-  const { isConnected, connectionError, emitCodeChange, emitLanguageChange, emitOutputChange } = useSocket(
+  const { 
+    isConnected, 
+    connectionError, 
+    emitCodeChange, 
+    emitLanguageChange, 
+    emitOutputChange,
+    emitActivityChange
+  } = useSocket(
     sessionId,
     {
       onSessionState: handleSessionState,
       onCodeUpdate: handleCodeUpdate,
       onLanguageUpdate: handleLanguageUpdate,
       onOutputUpdate: handleOutputUpdate,
+      onPresenceUpdate: handlePresenceUpdate,
       onError: handleError
     }
   );
+
+  // Track visibility/activity status
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      emitActivityChange(!document.hidden);
+    };
+
+    const handleFocus = () => emitActivityChange(true);
+    const handleBlur = () => emitActivityChange(false);
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('focus', handleFocus);
+    window.addEventListener('blur', handleBlur);
+
+    // Initial check
+    if (isConnected) {
+      emitActivityChange(true);
+    }
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('focus', handleFocus);
+      window.removeEventListener('blur', handleBlur);
+    };
+  }, [isConnected, emitActivityChange]);
 
   /**
    * Handle local code change
@@ -135,31 +177,19 @@ function Session() {
     await runCode(code, language);
   }, [code, language, runCode, emitOutputChange]);
 
-  // Sync local output to display and broadcast when it changes
-  const handleLocalOutputChange = useCallback(() => {
+
+
+  // Effect to sync local output
+  // Effect to sync local output
+  useEffect(() => {
     if (!isRemoteOutput) {
       setDisplayOutput(localOutput);
       setDisplayError(localError);
-      // Broadcast to other clients
       emitOutputChange(localOutput, localError, localIsRunning);
     }
   }, [localOutput, localError, localIsRunning, isRemoteOutput, emitOutputChange]);
 
-  // Effect to sync local output
-  useState(() => {
-    if (!isRemoteOutput) {
-      setDisplayOutput(localOutput);
-      setDisplayError(localError);
-      emitOutputChange(localOutput, localError, localIsRunning);
-    }
-  });
 
-  // Update display when local execution finishes
-  if (!isRemoteOutput && (localOutput !== displayOutput || localError !== displayError)) {
-    setDisplayOutput(localOutput);
-    setDisplayError(localError);
-    emitOutputChange(localOutput, localError, localIsRunning);
-  }
 
   /**
    * Clear output
@@ -194,6 +224,12 @@ function Session() {
         </div>
 
         <div className="session__header-right">
+          {/* Presence indicator */}
+          <PresenceIndicator 
+            userCount={presence.userCount} 
+            activeCount={presence.activeCount} 
+          />
+
           {/* Connection status */}
           <div className={`session__status ${isConnected ? 'session__status--connected' : 'session__status--disconnected'}`}>
             <span className="session__status-dot"></span>
