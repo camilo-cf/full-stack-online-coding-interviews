@@ -36,6 +36,31 @@ describe('REST API Integration Tests', () => {
     });
   });
 
+  describe('Security Headers', () => {
+    it('should include strictly configured Content-Security-Policy', async () => {
+      const response = await request(app).get('/health');
+      
+      const csp = response.headers['content-security-policy'];
+      expect(csp).toBeDefined();
+      
+      // Verify critical security directives
+      expect(csp).toContain("default-src 'self'");
+      
+      // Verify external sources allowed for functionality (Monaco, Pyodide)
+      expect(csp).toContain("cdn.jsdelivr.net"); // Scripts & Styles
+      expect(csp).toContain("fonts.googleapis.com"); // Fonts
+    });
+
+    it('should include Rate Limiting headers on API routes', async () => {
+      // Rate limiter is mounted on /api/
+      const response = await request(app).get('/api/sessions/rate-limit-check').expect(404);
+      
+      // Standard headers are used (legacyHeaders: false)
+      expect(response.headers['ratelimit-limit']).toBeDefined();
+      expect(response.headers['ratelimit-remaining']).toBeDefined();
+    });
+  });
+
   describe('POST /api/sessions', () => {
     it('should create a new session and return a valid session ID', async () => {
       const response = await request(app)

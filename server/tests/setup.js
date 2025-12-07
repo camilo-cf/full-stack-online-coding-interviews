@@ -9,6 +9,8 @@ import express from 'express';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
 import cors from 'cors';
+import helmet from 'helmet';
+import rateLimit from 'express-rate-limit';
 
 import sessionRoutes from '../src/routes/sessions.js';
 import { registerSocketHandlers } from '../src/socket/handlers.js';
@@ -23,6 +25,31 @@ export function createTestServer() {
   // Middleware
   app.use(cors({ origin: '*' }));
   app.use(express.json());
+
+  // Security Middleware (Mirroring production)
+  app.use(helmet({
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        scriptSrc: ["'self'", "'unsafe-eval'", "cdn.jsdelivr.net"],
+        connectSrc: ["'self'", "ws:", "wss:", "data:", "https://cdn.jsdelivr.net"],
+        styleSrc: ["'self'", "'unsafe-inline'", "fonts.googleapis.com", "cdn.jsdelivr.net"],
+        fontSrc: ["'self'", "fonts.gstatic.com"],
+        imgSrc: ["'self'", "data:", "blob:"],
+        workerSrc: ["'self'", "blob:"],
+      },
+    },
+    crossOriginEmbedderPolicy: false,
+  }));
+
+  // Rate limiting (Mirroring production)
+  const apiLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 100,
+    standardHeaders: true,
+    legacyHeaders: false,
+  });
+  app.use('/api/', apiLimiter);
 
   // Routes
   app.use('/api/sessions', sessionRoutes);
