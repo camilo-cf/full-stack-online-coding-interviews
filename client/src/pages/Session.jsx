@@ -75,10 +75,10 @@ function Session() {
     setDisplayError(data.error || null);
     setIsRemoteOutput(true);
     setRemoteIsRunning(data.isRunning || false);
-    setRemoteIsRunning(data.isRunning || false);
   }, []);
 
   const handlePresenceUpdate = useCallback((data) => {
+    console.log('[Session] Presence updated:', data);
     setPresence(data);
   }, []);
 
@@ -109,25 +109,19 @@ function Session() {
   // Track visibility/activity status
   useEffect(() => {
     const handleVisibilityChange = () => {
+      console.log('[Session] Visibility changed:', !document.hidden);
       emitActivityChange(!document.hidden);
     };
 
-    const handleFocus = () => emitActivityChange(true);
-    const handleBlur = () => emitActivityChange(false);
-
     document.addEventListener('visibilitychange', handleVisibilityChange);
-    window.addEventListener('focus', handleFocus);
-    window.addEventListener('blur', handleBlur);
 
     // Initial check
     if (isConnected) {
-      emitActivityChange(true);
+      emitActivityChange(!document.hidden);
     }
 
     return () => {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
-      window.removeEventListener('focus', handleFocus);
-      window.removeEventListener('blur', handleBlur);
     };
   }, [isConnected, emitActivityChange]);
 
@@ -179,7 +173,6 @@ function Session() {
 
 
 
-  // Effect to sync local output
   // Effect to sync local output
   useEffect(() => {
     if (!isRemoteOutput) {
