@@ -112,60 +112,49 @@ sys.stderr = _stdout_capture
    * Execute JavaScript code safely in the browser
    * Uses a sandboxed Function to prevent access to global scope
    */
+  /**
+   * Execute JavaScript code safely using a Web Worker
+   * This prevents access to DOM/Cookies and handles infinite loops via timeout
+   */
   const executeJavaScript = useCallback((code) => {
-    let output = '';
-    const logs = [];
+    return new Promise((resolve) => {
+      try {
+        const worker = new Worker(new URL('../workers/javascript.worker.js', import.meta.url), { type: 'module' });
+        
+        const timeoutId = setTimeout(() => {
+          worker.terminate();
+          resolve({
+            success: false,
+            output: '',
+            error: 'Execution timed out (5s limit)'
+          });
+        }, 5000);
 
-    // Create a custom console that captures output
-    const customConsole = {
-      log: (...args) => {
-        logs.push(args.map(arg => 
-          typeof arg === 'object' ? JSON.stringify(arg, null, 2) : String(arg)
-        ).join(' '));
-      },
-      error: (...args) => {
-        logs.push(`Error: ${args.map(arg => String(arg)).join(' ')}`);
-      },
-      warn: (...args) => {
-        logs.push(`Warning: ${args.map(arg => String(arg)).join(' ')}`);
-      },
-      info: (...args) => {
-        logs.push(args.map(arg => String(arg)).join(' '));
-      }
-    };
+        worker.onmessage = (e) => {
+          clearTimeout(timeoutId);
+          worker.terminate();
+          resolve(e.data);
+        };
 
-    try {
-      // Create a sandboxed function with limited scope
-      // Only expose console, not window, document, or other globals
-      const sandboxedCode = `
-        "use strict";
-        ${code}
-      `;
-      
-      // Use Function constructor to create sandboxed execution
-      const fn = new Function('console', sandboxedCode);
-      
-      // Execute with custom console
-      const result = fn(customConsole);
-      
-      // Collect output
-      output = logs.join('\n');
-      
-      // If there's a return value and no console output, show the return value
-      if (result !== undefined && logs.length === 0) {
-        output = typeof result === 'object' 
-          ? JSON.stringify(result, null, 2) 
-          : String(result);
+        worker.onerror = (err) => {
+          clearTimeout(timeoutId);
+          worker.terminate();
+          resolve({
+            success: false,
+            output: '',
+            error: `Runtime Error: ${err.message}`
+          });
+        };
+
+        worker.postMessage({ code });
+      } catch (err) {
+        resolve({
+          success: false,
+          output: '',
+          error: `Failed to start worker: ${err.message}`
+        });
       }
-      
-      return { success: true, output: output || '(No output)' };
-    } catch (err) {
-      return { 
-        success: false, 
-        output: logs.length > 0 ? logs.join('\n') + '\n\n' : '',
-        error: `${err.name}: ${err.message}` 
-      };
-    }
+    });
   }, []);
 
   /**
@@ -226,7 +215,7 @@ sys.stderr = _stdout_capture
       let result;
       
       if (language === 'javascript') {
-        result = executeJavaScript(code);
+        result = await executeJavaScript(code);
       } else if (language === 'python') {
         result = await executePython(code);
       } else {

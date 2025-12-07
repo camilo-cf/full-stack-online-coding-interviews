@@ -11,6 +11,8 @@ A real-time collaborative coding interview platform built with React, Express, a
 - 📟 **Shared Console** - Execution output is synchronized across all session participants
 - 🐍 **Python via Pyodide** - Full Python runtime compiled to WebAssembly (runs in browser)
 - 👁️ **Presence Tracking** - See how many users are connected and if they are active/focused
+- 🔒 **Secure Execution** - Client-side code runs in isolated Web Workers and Pyodide sandboxes
+- 🛡️ **Hardened Server** - Rate limiting, CSP, and security headers enabled
 - 🌐 **Multiple Languages** - Support for JavaScript, Python, and more
 - 🎨 **Dark/Light Theme** - Toggle between themes with localStorage persistence
 - ⚡ **Instant Updates** - Changes appear immediately for all connected users

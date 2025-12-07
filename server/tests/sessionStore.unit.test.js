@@ -5,14 +5,15 @@
  * These are pure unit tests - no network, no integration.
  */
 
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import {
   createSession,
   getSession,
   updateCode,
   updateLanguage,
   sessionExists,
-  getSessionCount
+  getSessionCount,
+  cleanupSessions
 } from '../src/store/sessionStore.js';
 
 describe('Session Store Unit Tests', () => {
@@ -146,6 +147,54 @@ describe('Session Store Unit Tests', () => {
       createSession('test-count-2');
 
       expect(getSessionCount()).toBe(initialCount + 2);
+    });
+  });
+  describe('cleanupSessions', () => {
+    beforeEach(() => {
+      vi.useFakeTimers();
+    });
+
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    it('should remove expired sessions', () => {
+      const sessionId = 'expired-session';
+      createSession(sessionId);
+      
+      // Fast forward 25 hours
+      vi.advanceTimersByTime(25 * 60 * 60 * 1000);
+      
+      const removed = cleanupSessions();
+      expect(removed).toBeGreaterThan(0);
+      expect(sessionExists(sessionId)).toBe(false);
+    });
+
+    it('should keep active sessions', () => {
+      const sessionId = 'active-session';
+      createSession(sessionId);
+      
+      // Fast forward 23 hours
+      vi.advanceTimersByTime(23 * 60 * 60 * 1000);
+      
+      cleanupSessions();
+      expect(sessionExists(sessionId)).toBe(true);
+    });
+
+    it('should update timestamp on code change', () => {
+      const sessionId = 'active-code-session';
+      createSession(sessionId);
+      
+      // Advance 20 hours
+      vi.advanceTimersByTime(20 * 60 * 60 * 1000);
+      
+      updateCode(sessionId, 'new code');
+      
+      // Advance another 5 hours (total 25 from start, but 5 from update)
+      vi.advanceTimersByTime(5 * 60 * 60 * 1000);
+      
+      cleanupSessions();
+      expect(sessionExists(sessionId)).toBe(true);
     });
   });
 });

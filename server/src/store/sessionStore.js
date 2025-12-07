@@ -18,7 +18,8 @@ export function createSession(sessionId) {
     id: sessionId,
     code: '// Start coding here...\n',
     language: 'javascript',
-    createdAt: new Date().toISOString()
+    createdAt: new Date().toISOString(),
+    lastActiveAt: Date.now()
   };
   
   sessions.set(sessionId, session);
@@ -50,6 +51,7 @@ export function updateCode(sessionId, code) {
   }
   
   session.code = code;
+  session.lastActiveAt = Date.now();
   console.log(`[SessionStore] Updated code in session: ${sessionId} (${code.length} chars)`);
   return true;
 }
@@ -68,6 +70,7 @@ export function updateLanguage(sessionId, language) {
   }
   
   session.language = language;
+  session.lastActiveAt = Date.now();
   console.log(`[SessionStore] Updated language in session: ${sessionId} -> ${language}`);
   return true;
 }
@@ -88,3 +91,32 @@ export function sessionExists(sessionId) {
 export function getSessionCount() {
   return sessions.size;
 }
+
+/**
+ * Cleanup expired sessions
+ * Removes sessions inactive for more than 24 hours
+ * @returns {number} Number of deleted sessions
+ */
+export function cleanupSessions() {
+  const EXPIRATION_MS = 24 * 60 * 60 * 1000; // 24 hours
+  const now = Date.now();
+  let deletedCount = 0;
+  
+  for (const [id, session] of sessions.entries()) {
+    // Legacy support: if lastActiveAt missing, use createdAt or assume old
+    const lastActive = session.lastActiveAt || new Date(session.createdAt).getTime();
+    
+    if (now - lastActive > EXPIRATION_MS) {
+      sessions.delete(id);
+      deletedCount++;
+    }
+  }
+  
+  if (deletedCount > 0) {
+    console.log(`[SessionStore] Cleaned up ${deletedCount} expired sessions`);
+  }
+  return deletedCount;
+}
+
+// Start auto-cleanup every hour
+setInterval(cleanupSessions, 60 * 60 * 1000);
