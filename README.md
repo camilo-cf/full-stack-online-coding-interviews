@@ -93,43 +93,87 @@ The client will start on `http://localhost:5173`
 
 ## Running Tests
 
-The project includes integration tests for the backend API and Socket.IO real-time communication.
+The project includes **69 tests** total: integration tests and unit tests for both server and client.
 
 ### Test Stack
 
 - **Vitest** - Fast test runner with ES modules support
 - **Supertest** - HTTP assertions for REST API testing
 - **socket.io-client** - Client library for Socket.IO integration tests
+- **Testing Library** - React component and hook testing
 
 ### Execute Tests
 
+**Server Tests (26 tests):**
 ```bash
 cd server
 npm test
 ```
 
-Or run tests in watch mode during development:
+**Client Tests (43 tests):**
 ```bash
-cd server
+cd client
+npm test
+```
+
+Run tests in watch mode during development:
+```bash
 npm run test:watch
 ```
 
-### What's Tested
+### Server Tests
 
-**REST API Tests (`tests/api.test.js`):**
+**Unit Tests (`tests/sessionStore.unit.test.js`) - 15 tests:**
+- `createSession()` - creates session with given ID, default code, language, timestamp
+- `getSession()` - returns session or null
+- `updateCode()` - updates code, handles empty/multiline, returns false for invalid session
+- `updateLanguage()` - updates language, returns false for invalid session
+- `sessionExists()` - checks if session exists
+- `getSessionCount()` - returns total sessions
+
+**Integration Tests (`tests/api.test.js`) - 5 tests:**
 - Health check endpoint returns status OK
 - POST `/api/sessions` creates a new session with valid UUID
 - Each session gets a unique ID
 - GET `/api/sessions/:id` returns session data
 - GET returns 404 for non-existent sessions
 
-**Socket.IO Tests (`tests/socket.test.js`):**
+**Integration Tests (`tests/socket.test.js`) - 6 tests:**
 - Clients receive session state when joining
 - Error returned when joining non-existent session
 - Code changes broadcast to other clients in same session
 - Sender does NOT receive their own code update
 - Language changes broadcast to other clients
 - **Session isolation**: Changes in one session do NOT affect other sessions
+
+### Client Tests
+
+**Hook Tests (`tests/useTheme.test.js`) - 11 tests:**
+- Theme defaults to dark when no preference saved
+- Loads saved theme from localStorage
+- Respects system preference
+- `toggleTheme()` toggles between dark/light
+- `setTheme()` sets specific theme, ignores invalid values
+- DOM updates (data-theme attribute)
+
+**Component Tests (`tests/ThemeToggle.test.jsx`) - 8 tests:**
+- Renders button with correct aria-label and title
+- Calls onToggle when clicked
+- Correct CSS classes for dark/light themes
+
+**Component Tests (`tests/CodeEditor.test.jsx`) - 12 tests:**
+- Renders textarea with provided value
+- Shows correct filename per language (js/py/txt)
+- Renders line numbers
+- Calls onChange when text typed
+- Handles disabled state
+- Window control dots rendered
+
+**Component Tests (`tests/LanguageSelector.test.jsx`) - 12 tests:**
+- Renders select with all language options
+- Displays correct icon per language
+- Calls onChange when selection changes
+- Handles disabled state
 
 ## API Reference
 
