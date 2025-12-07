@@ -68,21 +68,28 @@ npm install
 
 ### Running the Application
 
-You'll need **two terminal windows**:
+**Quick Start (Recommended):**
 
-**Terminal 1 - Start the Backend:**
+From the root directory, run both client and server simultaneously:
 ```bash
-cd server
 npm run dev
 ```
-The server will start on `http://localhost:3001`
 
-**Terminal 2 - Start the Frontend:**
+This starts:
+- Server on `http://localhost:3001`
+- Client on `http://localhost:5173`
+
+**Alternative: Run Separately**
+
+You can also run them in separate terminal windows:
+
 ```bash
-cd client
-npm run dev
+# Terminal 1 - Backend
+cd server && npm run dev
+
+# Terminal 2 - Frontend
+cd client && npm run dev
 ```
-The client will start on `http://localhost:5173`
 
 ### Usage
 
