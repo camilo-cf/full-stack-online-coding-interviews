@@ -45,7 +45,7 @@ app.use(helmet({
       defaultSrc: ["'self'"],
       scriptSrc: ["'self'", "'unsafe-eval'", "cdn.jsdelivr.net"],
       connectSrc: ["'self'", "ws:", "wss:", "data:", "https://cdn.jsdelivr.net"],
-      styleSrc: ["'self'", "'unsafe-inline'", "fonts.googleapis.com"],
+      styleSrc: ["'self'", "'unsafe-inline'", "fonts.googleapis.com", "cdn.jsdelivr.net"],
       fontSrc: ["'self'", "fonts.gstatic.com"],
       imgSrc: ["'self'", "data:", "blob:"],
       workerSrc: ["'self'", "blob:"],
