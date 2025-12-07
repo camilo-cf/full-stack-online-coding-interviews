@@ -192,10 +192,17 @@
 
 /* Editor area */
 .session__editor {
-  flex: 1;
+  flex: 2;
   min-height: 0;
   display: flex;
   flex-direction: column;
+}
+
+/* Output panel area */
+.session__output {
+  flex: 1;
+  min-height: 150px;
+  max-height: 300px;
 }
 
 /* Loading state */
@@ -220,6 +227,59 @@
 
 @keyframes spin {
   to { transform: rotate(360deg); }
+}
+
+/* Toolbar */
+.session__toolbar-left {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--space-3);
+}
+
+/* Run button */
+.session__run-btn {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-4);
+  background: linear-gradient(135deg, var(--color-success), #059669);
+  border: none;
+  border-radius: var(--radius-md);
+  color: white;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+}
+
+.session__run-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+}
+
+.session__run-btn:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.session__run-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.session__run-btn svg {
+  flex-shrink: 0;
+}
+
+.session__run-spinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
 }
 
 /* ============================================
@@ -249,4 +309,10 @@
   .session__status-text {
     display: none;
   }
+  
+  .session__output {
+    min-height: 120px;
+    max-height: 200px;
+  }
 }
+

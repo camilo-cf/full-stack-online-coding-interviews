@@ -125,6 +125,27 @@ export function registerSocketHandlers(io) {
     });
 
     /**
+     * Handle execution output sharing
+     * Client sends: { sessionId: string, output: string, error: string|null, isRunning: boolean }
+     * Server broadcasts: output-update to ALL clients in room (including sender for confirmation)
+     */
+    socket.on('output-change', (data) => {
+      const { sessionId, output, error, isRunning } = data;
+      
+      if (!sessionId) {
+        socket.emit('error', { message: 'Invalid output data' });
+        return;
+      }
+      
+      // Broadcast to all OTHER clients in the room
+      socket.to(sessionId).emit('output-update', { 
+        output: output || '', 
+        error: error || null,
+        isRunning: isRunning || false
+      });
+    });
+
+    /**
      * Handle client disconnect
      */
     socket.on('disconnect', () => {

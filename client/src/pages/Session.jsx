@@ -4,16 +4,19 @@
  * Main interview session view featuring:
  * - Real-time code editor synced across clients
  * - Language selector shared across clients
+ * - Client-side code execution (JS + Python via Pyodide)
  * - Connection status indicator
  * - Share link functionality
  */
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useSocket } from '../hooks/useSocket.js';
 import { useTheme } from '../hooks/useTheme.js';
+import { useCodeExecution } from '../hooks/useCodeExecution.js';
 import CodeEditor from '../components/CodeEditor.jsx';
 import LanguageSelector from '../components/LanguageSelector.jsx';
 import ThemeToggle from '../components/ThemeToggle.jsx';
+import OutputPanel from '../components/OutputPanel.jsx';
 import './Session.css';
 
 function Session() {
@@ -25,6 +28,22 @@ function Session() {
   const [language, setLanguage] = useState('javascript');
   const [isLoading, setIsLoading] = useState(true);
   const [copied, setCopied] = useState(false);
+  
+  // Output state (can come from local execution or remote sync)
+  const [displayOutput, setDisplayOutput] = useState('');
+  const [displayError, setDisplayError] = useState(null);
+  const [isRemoteOutput, setIsRemoteOutput] = useState(false);
+  const [remoteIsRunning, setRemoteIsRunning] = useState(false);
+  
+  // Code execution hook (client-side only)
+  const {
+    output: localOutput,
+    isRunning: localIsRunning,
+    isLoading: isPyodideLoading,
+    loadingMessage,
+    error: localError,
+    runCode
+  } = useCodeExecution();
 
   /**
    * Socket event handlers
@@ -46,17 +65,26 @@ function Session() {
     setLanguage(newLanguage);
   }, []);
 
+  const handleOutputUpdate = useCallback((data) => {
+    console.log('[Session] Output received from another client');
+    setDisplayOutput(data.output || '');
+    setDisplayError(data.error || null);
+    setIsRemoteOutput(true);
+    setRemoteIsRunning(data.isRunning || false);
+  }, []);
+
   const handleError = useCallback((message) => {
     console.error('[Session] Socket error:', message);
   }, []);
 
   // Connect to socket
-  const { isConnected, connectionError, emitCodeChange, emitLanguageChange } = useSocket(
+  const { isConnected, connectionError, emitCodeChange, emitLanguageChange, emitOutputChange } = useSocket(
     sessionId,
     {
       onSessionState: handleSessionState,
       onCodeUpdate: handleCodeUpdate,
       onLanguageUpdate: handleLanguageUpdate,
+      onOutputUpdate: handleOutputUpdate,
       onError: handleError
     }
   );
@@ -89,6 +117,59 @@ function Session() {
       console.error('[Session] Failed to copy link:', err);
     }
   }, []);
+
+  /**
+   * Handle Run button click
+   * Executes code locally in the browser (no server execution)
+   * Then broadcasts output to other clients
+   */
+  const handleRunCode = useCallback(async () => {
+    // Mark as local output
+    setIsRemoteOutput(false);
+    
+    // Start running - broadcast to others
+    emitOutputChange('', null, true);
+    setRemoteIsRunning(false);
+    
+    // Run locally
+    await runCode(code, language);
+  }, [code, language, runCode, emitOutputChange]);
+
+  // Sync local output to display and broadcast when it changes
+  const handleLocalOutputChange = useCallback(() => {
+    if (!isRemoteOutput) {
+      setDisplayOutput(localOutput);
+      setDisplayError(localError);
+      // Broadcast to other clients
+      emitOutputChange(localOutput, localError, localIsRunning);
+    }
+  }, [localOutput, localError, localIsRunning, isRemoteOutput, emitOutputChange]);
+
+  // Effect to sync local output
+  useState(() => {
+    if (!isRemoteOutput) {
+      setDisplayOutput(localOutput);
+      setDisplayError(localError);
+      emitOutputChange(localOutput, localError, localIsRunning);
+    }
+  });
+
+  // Update display when local execution finishes
+  if (!isRemoteOutput && (localOutput !== displayOutput || localError !== displayError)) {
+    setDisplayOutput(localOutput);
+    setDisplayError(localError);
+    emitOutputChange(localOutput, localError, localIsRunning);
+  }
+
+  /**
+   * Clear output
+   */
+  const handleClearOutput = useCallback(() => {
+    setDisplayOutput('');
+    setDisplayError(null);
+    setIsRemoteOutput(false);
+    emitOutputChange('', null, false);
+  }, [emitOutputChange]);
 
   return (
     <div className="session">
@@ -154,11 +235,35 @@ function Session() {
       <main className="session__main">
         {/* Toolbar */}
         <div className="session__toolbar">
-          <LanguageSelector
-            value={language}
-            onChange={handleLanguageChange}
-            disabled={!isConnected}
-          />
+          <div className="session__toolbar-left">
+            <LanguageSelector
+              value={language}
+              onChange={handleLanguageChange}
+              disabled={!isConnected}
+            />
+            
+            {/* Run Button */}
+            <button
+              className="session__run-btn"
+              onClick={handleRunCode}
+              disabled={!isConnected || localIsRunning || isPyodideLoading || language === 'other'}
+              title={language === 'other' ? 'Execution not supported for this language' : 'Run code (Ctrl+Enter)'}
+            >
+              {localIsRunning ? (
+                <>
+                  <span className="session__run-spinner"></span>
+                  Running...
+                </>
+              ) : (
+                <>
+                  <svg viewBox="0 0 24 24" fill="none" width="16" height="16">
+                    <path d="M5 3L19 12L5 21V3Z" fill="currentColor"/>
+                  </svg>
+                  Run
+                </>
+              )}
+            </button>
+          </div>
           
           {connectionError && (
             <div className="session__error">
@@ -186,6 +291,19 @@ function Session() {
               disabled={!isConnected}
             />
           )}
+        </div>
+        
+        {/* Output Panel */}
+        <div className="session__output">
+          <OutputPanel
+            output={displayOutput}
+            error={displayError}
+            isRunning={localIsRunning || remoteIsRunning}
+            isLoading={isPyodideLoading}
+            loadingMessage={loadingMessage}
+            isRemote={isRemoteOutput}
+            onClear={handleClearOutput}
+          />
         </div>
       </main>
     </div>

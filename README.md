@@ -7,6 +7,9 @@ A real-time collaborative coding interview platform built with React, Express, a
 - 🔗 **Create & Share Sessions** - Generate unique session links to share with candidates
 - 👥 **Real-time Collaboration** - Code together with live sync (like Google Docs for code)
 - ✨ **Syntax Highlighting** - Monaco Editor (VS Code's editor) for JavaScript and Python
+- ▶️ **Run Code in Browser** - Execute JavaScript and Python directly in the browser
+- 📟 **Shared Console** - Execution output is synchronized across all session participants
+- 🐍 **Python via Pyodide** - Full Python runtime compiled to WebAssembly (runs in browser)
 - 🌐 **Multiple Languages** - Support for JavaScript, Python, and more
 - 🎨 **Dark/Light Theme** - Toggle between themes with localStorage persistence
 - ⚡ **Instant Updates** - Changes appear immediately for all connected users
@@ -17,6 +20,7 @@ A real-time collaborative coding interview platform built with React, Express, a
 |-------|------------|
 | Frontend | React 18 + Vite |
 | Code Editor | Monaco Editor (VS Code) |
+| Code Execution | Pyodide (Python→WASM) + Sandboxed JS |
 | Backend | Node.js + Express |
 | Real-time | Socket.IO |
 | Testing | Vitest + Supertest + Testing Library |

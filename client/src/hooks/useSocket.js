@@ -21,6 +21,7 @@ const SOCKET_URL = '/';
  * @param {Function} callbacks.onSessionState - Called when initial state is received
  * @param {Function} callbacks.onCodeUpdate - Called when code changes from other clients
  * @param {Function} callbacks.onLanguageUpdate - Called when language changes from other clients
+ * @param {Function} callbacks.onOutputUpdate - Called when execution output changes from other clients
  * @param {Function} callbacks.onError - Called when an error occurs
  */
 export function useSocket(sessionId, callbacks) {
@@ -84,6 +85,11 @@ export function useSocket(sessionId, callbacks) {
       callbacksRef.current.onLanguageUpdate?.(data.language);
     });
 
+    socket.on('output-update', (data) => {
+      console.log('[useSocket] Received output update from remote');
+      callbacksRef.current.onOutputUpdate?.(data);
+    });
+
     socket.on('error', (data) => {
       console.error('[useSocket] Server error:', data.message);
       callbacksRef.current.onError?.(data.message);
@@ -115,10 +121,20 @@ export function useSocket(sessionId, callbacks) {
     }
   }, [sessionId]);
 
+  /**
+   * Emit an output update to the server (for syncing execution results)
+   */
+  const emitOutputChange = useCallback((output, error, isRunning) => {
+    if (socketRef.current?.connected) {
+      socketRef.current.emit('output-change', { sessionId, output, error, isRunning });
+    }
+  }, [sessionId]);
+
   return {
     isConnected,
     connectionError,
     emitCodeChange,
-    emitLanguageChange
+    emitLanguageChange,
+    emitOutputChange
   };
 }
