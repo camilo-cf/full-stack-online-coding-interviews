@@ -4,11 +4,18 @@
     "description": "Collaborative coding interview platform with real-time sync",
     "private": true,
     "scripts": {
+        "dev": "concurrently \"npm run dev --prefix server\" \"npm run dev --prefix client\"",
         "install:all": "cd server && npm install && cd ../client && npm install",
         "dev:server": "cd server && npm run dev",
         "dev:client": "cd client && npm run dev",
         "start:server": "cd server && npm start",
-        "build:client": "cd client && npm run build"
+        "build:client": "cd client && npm run build",
+        "test:server": "cd server && npm test",
+        "test:client": "cd client && npm test",
+        "test": "npm run test:server && npm run test:client"
+    },
+    "devDependencies": {
+        "concurrently": "^8.2.2"
     },
     "keywords": [
         "interview",
