@@ -1,17 +1,14 @@
 # CodeCollab - Collaborative Coding Interview Platform
 
-A real-time collaborative coding interview platform built with React, Express, and Socket.IO.
-
-![CodeCollab](https://img.shields.io/badge/version-1.0.0-blue.svg)
-![License](https://img.shields.io/badge/license-MIT-green.svg)
+A real-time collaborative coding interview platform built with React, Express, and Socket.IO. Create interview sessions, share links with candidates, and code together in real-time.
 
 ## Features
 
 - 🔗 **Create & Share Sessions** - Generate unique session links to share with candidates
 - 👥 **Real-time Collaboration** - Code together with live sync (like Google Docs for code)
 - 🌐 **Multiple Languages** - Support for JavaScript, Python, and more
+- 🎨 **Dark/Light Theme** - Toggle between themes with localStorage persistence
 - ⚡ **Instant Updates** - Changes appear immediately for all connected users
-- 🎨 **Premium Dark UI** - Modern, distraction-free coding environment
 
 ## Tech Stack
 
@@ -20,7 +17,7 @@ A real-time collaborative coding interview platform built with React, Express, a
 | Frontend | React 18 + Vite |
 | Backend | Node.js + Express |
 | Real-time | Socket.IO |
-| Styling | Vanilla CSS (Dark Theme) |
+| Testing | Vitest + Supertest + socket.io-client |
 
 ## Project Structure
 
@@ -29,16 +26,19 @@ A real-time collaborative coding interview platform built with React, Express, a
 │   ├── src/
 │   │   ├── components/     # Reusable UI components
 │   │   ├── hooks/          # Custom React hooks
-│   │   ├── pages/          # Page components
-│   │   └── index.css       # Global styles
-│   └── vite.config.js
+│   │   └── pages/          # Page components
+│   └── package.json
 │
 ├── server/                 # Express backend
 │   ├── src/
 │   │   ├── routes/         # REST API endpoints
 │   │   ├── socket/         # Socket.IO handlers
 │   │   └── store/          # In-memory session storage
-│   └── openapi.yaml        # API specification
+│   ├── tests/              # Integration tests
+│   │   ├── api.test.js     # REST API tests
+│   │   ├── socket.test.js  # Socket.IO tests
+│   │   └── setup.js        # Test server factory
+│   └── package.json
 │
 └── package.json            # Root scripts
 ```
@@ -48,19 +48,25 @@ A real-time collaborative coding interview platform built with React, Express, a
 ### Prerequisites
 
 - Node.js 18+ installed
-- npm or yarn
+- npm
 
 ### Installation
 
 ```bash
-# Clone the repository (if applicable)
+# Clone the repository
+git clone https://github.com/camilo-cf/full-stack-online-coding-interviews.git
 cd full-stack-online-coding-interviews
 
-# Install all dependencies (both client and server)
-npm run install:all
+# Install server dependencies
+cd server
+npm install
+
+# Install client dependencies
+cd ../client
+npm install
 ```
 
-### Running Locally
+### Running the Application
 
 You'll need **two terminal windows**:
 
@@ -85,6 +91,46 @@ The client will start on `http://localhost:5173`
 3. Share the session URL with your candidate
 4. Start coding together! 🎉
 
+## Running Tests
+
+The project includes integration tests for the backend API and Socket.IO real-time communication.
+
+### Test Stack
+
+- **Vitest** - Fast test runner with ES modules support
+- **Supertest** - HTTP assertions for REST API testing
+- **socket.io-client** - Client library for Socket.IO integration tests
+
+### Execute Tests
+
+```bash
+cd server
+npm test
+```
+
+Or run tests in watch mode during development:
+```bash
+cd server
+npm run test:watch
+```
+
+### What's Tested
+
+**REST API Tests (`tests/api.test.js`):**
+- Health check endpoint returns status OK
+- POST `/api/sessions` creates a new session with valid UUID
+- Each session gets a unique ID
+- GET `/api/sessions/:id` returns session data
+- GET returns 404 for non-existent sessions
+
+**Socket.IO Tests (`tests/socket.test.js`):**
+- Clients receive session state when joining
+- Error returned when joining non-existent session
+- Code changes broadcast to other clients in same session
+- Sender does NOT receive their own code update
+- Language changes broadcast to other clients
+- **Session isolation**: Changes in one session do NOT affect other sessions
+
 ## API Reference
 
 See [server/openapi.yaml](server/openapi.yaml) for the full API specification.
@@ -95,6 +141,7 @@ See [server/openapi.yaml](server/openapi.yaml) for the full API specification.
 |--------|----------|-------------|
 | POST | `/api/sessions` | Create a new session |
 | GET | `/api/sessions/:id` | Get session details |
+| GET | `/health` | Health check |
 
 ### Socket.IO Events
 
@@ -107,14 +154,6 @@ See [server/openapi.yaml](server/openapi.yaml) for the full API specification.
 | `language-change` | Client → Server | Change language |
 | `language-update` | Server → Client | Receive language update |
 
-## Future Enhancements
-
-- [ ] Syntax highlighting (Monaco Editor or CodeMirror)
-- [ ] Code execution (sandboxed runtime)
-- [ ] Video/audio chat integration
-- [ ] Session persistence (database storage)
-- [ ] User authentication
-
 ## License
 
-MIT License - See LICENSE file for details.
+MIT License
