@@ -1,0 +1,22 @@
+{
+    "name": "interview-platform",
+    "version": "1.0.0",
+    "description": "Collaborative coding interview platform with real-time sync",
+    "private": true,
+    "scripts": {
+        "install:all": "cd server && npm install && cd ../client && npm install",
+        "dev:server": "cd server && npm run dev",
+        "dev:client": "cd client && npm run dev",
+        "start:server": "cd server && npm start",
+        "build:client": "cd client && npm run build"
+    },
+    "keywords": [
+        "interview",
+        "coding",
+        "collaborative",
+        "real-time",
+        "socket.io"
+    ],
+    "author": "",
+    "license": "MIT"
+}

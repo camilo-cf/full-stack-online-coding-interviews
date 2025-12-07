@@ -1,0 +1,88 @@
+/**
+ * LanguageSelector Component Styles
+ * 
+ * Custom styled select dropdown with:
+ * - Dark theme
+ * - Language icon
+ * - Custom dropdown arrow
+ */
+
+.language-selector {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.language-selector__label {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.language-selector__wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.language-selector__icon {
+  position: absolute;
+  left: var(--space-3);
+  font-size: 1.1rem;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.language-selector__select {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 100%;
+  padding: var(--space-3) var(--space-10) var(--space-3) var(--space-10);
+  background: var(--color-bg-tertiary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  color: var(--color-text-primary);
+  font-family: inherit;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.language-selector__select:hover:not(:disabled) {
+  border-color: var(--color-border-hover);
+  background: var(--color-bg-elevated);
+}
+
+.language-selector__select:focus {
+  outline: none;
+  border-color: var(--color-accent-primary);
+  box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.15);
+}
+
+.language-selector__select:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.language-selector__select option {
+  background: var(--color-bg-secondary);
+  color: var(--color-text-primary);
+  padding: var(--space-2);
+}
+
+.language-selector__arrow {
+  position: absolute;
+  right: var(--space-3);
+  width: 18px;
+  height: 18px;
+  color: var(--color-text-muted);
+  pointer-events: none;
+  transition: transform var(--transition-fast);
+}
+
+.language-selector__select:focus + .language-selector__arrow {
+  transform: rotate(180deg);
+}

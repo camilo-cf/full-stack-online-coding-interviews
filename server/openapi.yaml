@@ -1,0 +1,182 @@
+openapi: 3.0.3
+info:
+  title: Collaborative Coding Interview API
+  description: |
+    REST API for the collaborative coding interview platform.
+    Handles session creation and retrieval. Real-time collaboration
+    is handled via Socket.IO (documented separately below).
+  version: 1.0.0
+  contact:
+    name: Interview Platform Team
+
+servers:
+  - url: http://localhost:3001
+    description: Local development server
+
+tags:
+  - name: Sessions
+    description: Session management endpoints
+
+paths:
+  /api/sessions:
+    post:
+      tags:
+        - Sessions
+      summary: Create a new coding session
+      description: Creates a new session with a unique ID, initializes empty code and default language (JavaScript).
+      operationId: createSession
+      responses:
+        '201':
+          description: Session created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SessionCreated'
+              example:
+                id: "550e8400-e29b-41d4-a716-446655440000"
+                message: "Session created successfully"
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/sessions/{sessionId}:
+    get:
+      tags:
+        - Sessions
+      summary: Get session details
+      description: Retrieves the current state of a session including code content and selected language.
+      operationId: getSession
+      parameters:
+        - name: sessionId
+          in: path
+          required: true
+          description: UUID of the session
+          schema:
+            type: string
+            format: uuid
+            example: "550e8400-e29b-41d4-a716-446655440000"
+      responses:
+        '200':
+          description: Session data retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Session'
+              example:
+                id: "550e8400-e29b-41d4-a716-446655440000"
+                code: "function hello() {\n  console.log('Hello!');\n}"
+                language: "javascript"
+        '404':
+          description: Session not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Session not found"
+
+components:
+  schemas:
+    Session:
+      type: object
+      required:
+        - id
+        - code
+        - language
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique session identifier
+        code:
+          type: string
+          description: Current code content in the editor
+        language:
+          type: string
+          enum:
+            - javascript
+            - python
+            - other
+          description: Selected programming language
+
+    SessionCreated:
+      type: object
+      required:
+        - id
+        - message
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique session identifier
+        message:
+          type: string
+          description: Success message
+
+    Error:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          type: string
+          description: Error message
+
+# Socket.IO Events Documentation (not part of OpenAPI spec, but included for reference)
+x-socketio-events:
+  client-to-server:
+    join-session:
+      description: Join a session room to receive updates
+      payload:
+        sessionId:
+          type: string
+          format: uuid
+
+    code-change:
+      description: Notify server of code changes
+      payload:
+        sessionId:
+          type: string
+          format: uuid
+        code:
+          type: string
+
+    language-change:
+      description: Notify server of language selection change
+      payload:
+        sessionId:
+          type: string
+          format: uuid
+        language:
+          type: string
+          enum: [javascript, python, other]
+
+  server-to-client:
+    session-state:
+      description: Initial session state sent when joining
+      payload:
+        code:
+          type: string
+        language:
+          type: string
+
+    code-update:
+      description: Broadcast code changes to other clients
+      payload:
+        code:
+          type: string
+
+    language-update:
+      description: Broadcast language changes to other clients
+      payload:
+        language:
+          type: string
+
+    error:
+      description: Error notification
+      payload:
+        message:
+          type: string
