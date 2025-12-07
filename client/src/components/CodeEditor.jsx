@@ -1,45 +1,75 @@
 /**
- * CodeEditor Component
+ * CodeEditor Component - Monaco Editor Integration
  * 
- * A styled textarea-based code editor for the initial implementation.
+ * A professional code editor with syntax highlighting powered by Monaco Editor.
  * Features:
- * - Monospace font for code
- * - Tab key handling
- * - Premium dark theme styling
- * 
- * Note: Syntax highlighting will be added in a future iteration.
+ * - Syntax highlighting for JavaScript and Python
+ * - Real-time collaborative editing via Socket.IO
+ * - Dark theme matching the app design
+ * - Language switching
  */
+import Editor from '@monaco-editor/react';
 import './CodeEditor.css';
+
+/**
+ * Map our language names to Monaco language identifiers
+ */
+const languageMap = {
+  javascript: 'javascript',
+  python: 'python',
+  other: 'plaintext'
+};
 
 /**
  * @param {Object} props
  * @param {string} props.value - Current code content
  * @param {Function} props.onChange - Callback when code changes
- * @param {string} props.language - Current language (for future syntax highlighting)
+ * @param {string} props.language - Current language for syntax highlighting
  * @param {boolean} props.disabled - Whether the editor is disabled
  */
 function CodeEditor({ value, onChange, language, disabled = false }) {
   /**
-   * Handle keyboard events for better coding experience
+   * Handle editor content changes
+   * This is called on every keystroke - we pass it up to parent
+   * which triggers the Socket.IO emit for real-time sync
    */
-  const handleKeyDown = (e) => {
-    // Handle Tab key - insert 2 spaces instead of changing focus
-    if (e.key === 'Tab') {
-      e.preventDefault();
-      
-      const textarea = e.target;
-      const start = textarea.selectionStart;
-      const end = textarea.selectionEnd;
-      
-      // Insert 2 spaces at cursor position
-      const newValue = value.substring(0, start) + '  ' + value.substring(end);
+  const handleEditorChange = (newValue) => {
+    if (!disabled && newValue !== undefined) {
       onChange(newValue);
-      
-      // Move cursor after the inserted spaces
-      requestAnimationFrame(() => {
-        textarea.selectionStart = textarea.selectionEnd = start + 2;
-      });
     }
+  };
+
+  /**
+   * Configure editor options when it mounts
+   */
+  const handleEditorMount = (editor, monaco) => {
+    // Focus the editor when mounted
+    editor.focus();
+    
+    // Define custom theme to match our app
+    monaco.editor.defineTheme('codecollab-dark', {
+      base: 'vs-dark',
+      inherit: true,
+      rules: [
+        { token: 'comment', foreground: '6A9955' },
+        { token: 'keyword', foreground: 'C586C0' },
+        { token: 'string', foreground: 'CE9178' },
+        { token: 'number', foreground: 'B5CEA8' },
+        { token: 'function', foreground: 'DCDCAA' },
+      ],
+      colors: {
+        'editor.background': '#1a1a24',
+        'editor.foreground': '#f8fafc',
+        'editorLineNumber.foreground': '#64748b',
+        'editorLineNumber.activeForeground': '#94a3b8',
+        'editor.selectionBackground': '#3b82f640',
+        'editor.lineHighlightBackground': '#22222e',
+        'editorCursor.foreground': '#8b5cf6',
+        'editorIndentGuide.background': '#2a2a36',
+      }
+    });
+    
+    monaco.editor.setTheme('codecollab-dark');
   };
 
   return (
@@ -56,23 +86,61 @@ function CodeEditor({ value, onChange, language, disabled = false }) {
       </div>
       
       <div className="code-editor__body">
-        <div className="code-editor__line-numbers">
-          {value.split('\n').map((_, index) => (
-            <span key={index}>{index + 1}</span>
-          ))}
-        </div>
-        
-        <textarea
-          className="code-editor__textarea"
+        <Editor
+          height="100%"
+          language={languageMap[language] || 'plaintext'}
           value={value}
-          onChange={(e) => onChange(e.target.value)}
-          onKeyDown={handleKeyDown}
-          disabled={disabled}
-          placeholder="// Start coding here..."
-          spellCheck={false}
-          autoComplete="off"
-          autoCorrect="off"
-          autoCapitalize="off"
+          onChange={handleEditorChange}
+          onMount={handleEditorMount}
+          theme="vs-dark"
+          options={{
+            // Editor appearance
+            fontSize: 14,
+            fontFamily: "'JetBrains Mono', 'Fira Code', 'Consolas', monospace",
+            fontLigatures: true,
+            lineHeight: 1.6,
+            
+            // UI options
+            minimap: { enabled: false },
+            scrollBeyondLastLine: false,
+            renderLineHighlight: 'line',
+            lineNumbers: 'on',
+            glyphMargin: false,
+            folding: true,
+            
+            // Behavior
+            automaticLayout: true,
+            tabSize: 2,
+            insertSpaces: true,
+            wordWrap: 'on',
+            
+            // Accessibility
+            readOnly: disabled,
+            
+            // Performance
+            quickSuggestions: true,
+            suggestOnTriggerCharacters: true,
+            
+            // Scrollbar styling
+            scrollbar: {
+              vertical: 'auto',
+              horizontal: 'auto',
+              verticalScrollbarSize: 10,
+              horizontalScrollbarSize: 10,
+            },
+            
+            // Padding
+            padding: {
+              top: 16,
+              bottom: 16,
+            },
+          }}
+          loading={
+            <div className="code-editor__loading">
+              <div className="code-editor__loading-spinner"></div>
+              <span>Loading editor...</span>
+            </div>
+          }
         />
       </div>
     </div>

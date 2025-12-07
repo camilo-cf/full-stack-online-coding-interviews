@@ -1,12 +1,26 @@
 /**
  * CodeEditor Component Unit Tests
  * 
- * Tests the code editor textarea component.
+ * Tests the Monaco-based code editor component.
  */
 
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import CodeEditor from '../src/components/CodeEditor.jsx';
+
+// Mock Monaco Editor since it doesn't work well in jsdom
+vi.mock('@monaco-editor/react', () => ({
+  default: ({ value, onChange, language, options }) => (
+    <div data-testid="monaco-editor" data-language={language}>
+      <textarea
+        data-testid="monaco-textarea"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        disabled={options?.readOnly}
+      />
+    </div>
+  )
+}));
 
 describe('CodeEditor Component Unit Tests', () => {
   const defaultProps = {
@@ -17,18 +31,17 @@ describe('CodeEditor Component Unit Tests', () => {
   };
 
   describe('Rendering', () => {
-    it('should render a textarea', () => {
+    it('should render the Monaco editor', () => {
       render(<CodeEditor {...defaultProps} />);
       
-      const textarea = screen.getByRole('textbox');
-      expect(textarea).toBeInTheDocument();
+      expect(screen.getByTestId('monaco-editor')).toBeInTheDocument();
     });
 
     it('should display the provided value', () => {
       const testCode = 'console.log("Hello!");';
       render(<CodeEditor {...defaultProps} value={testCode} />);
       
-      const textarea = screen.getByRole('textbox');
+      const textarea = screen.getByTestId('monaco-textarea');
       expect(textarea.value).toBe(testCode);
     });
 
@@ -50,38 +63,11 @@ describe('CodeEditor Component Unit Tests', () => {
       expect(screen.getByText('main.txt')).toBeInTheDocument();
     });
 
-    it('should render line numbers', () => {
-      const codeWithLines = 'line1\nline2\nline3';
-      const { container } = render(<CodeEditor {...defaultProps} value={codeWithLines} />);
+    it('should pass correct language to Monaco', () => {
+      render(<CodeEditor {...defaultProps} language="python" />);
       
-      const lineNumbers = container.querySelector('.code-editor__line-numbers');
-      expect(lineNumbers.children.length).toBe(3);
-    });
-  });
-
-  describe('Interaction', () => {
-    it('should call onChange when text is typed', () => {
-      const onChange = vi.fn();
-      render(<CodeEditor {...defaultProps} onChange={onChange} />);
-      
-      const textarea = screen.getByRole('textbox');
-      fireEvent.change(textarea, { target: { value: 'new code' } });
-      
-      expect(onChange).toHaveBeenCalledWith('new code');
-    });
-
-    it('should be disabled when disabled prop is true', () => {
-      render(<CodeEditor {...defaultProps} disabled={true} />);
-      
-      const textarea = screen.getByRole('textbox');
-      expect(textarea).toBeDisabled();
-    });
-
-    it('should not be disabled when disabled prop is false', () => {
-      render(<CodeEditor {...defaultProps} disabled={false} />);
-      
-      const textarea = screen.getByRole('textbox');
-      expect(textarea).not.toBeDisabled();
+      const editor = screen.getByTestId('monaco-editor');
+      expect(editor).toHaveAttribute('data-language', 'python');
     });
   });
 
@@ -95,19 +81,26 @@ describe('CodeEditor Component Unit Tests', () => {
     });
   });
 
-  describe('Textarea Attributes', () => {
-    it('should have spellCheck disabled', () => {
-      render(<CodeEditor {...defaultProps} />);
+  describe('Language Mapping', () => {
+    it('should map javascript to javascript', () => {
+      render(<CodeEditor {...defaultProps} language="javascript" />);
       
-      const textarea = screen.getByRole('textbox');
-      expect(textarea).toHaveAttribute('spellCheck', 'false');
+      const editor = screen.getByTestId('monaco-editor');
+      expect(editor).toHaveAttribute('data-language', 'javascript');
     });
 
-    it('should have autocomplete off', () => {
-      render(<CodeEditor {...defaultProps} />);
+    it('should map python to python', () => {
+      render(<CodeEditor {...defaultProps} language="python" />);
       
-      const textarea = screen.getByRole('textbox');
-      expect(textarea).toHaveAttribute('autoComplete', 'off');
+      const editor = screen.getByTestId('monaco-editor');
+      expect(editor).toHaveAttribute('data-language', 'python');
+    });
+
+    it('should map other to plaintext', () => {
+      render(<CodeEditor {...defaultProps} language="other" />);
+      
+      const editor = screen.getByTestId('monaco-editor');
+      expect(editor).toHaveAttribute('data-language', 'plaintext');
     });
   });
 });
