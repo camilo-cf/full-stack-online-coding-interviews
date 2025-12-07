@@ -10,12 +10,25 @@ A real-time collaborative coding interview platform built with React, Express, a
 - ▶️ **Run Code in Browser** - Execute JavaScript and Python directly in the browser
 - 📟 **Shared Console** - Execution output is synchronized across all session participants
 - 🐍 **Python via Pyodide** - Full Python runtime compiled to WebAssembly (runs in browser)
-- 👁️ **Presence Tracking** - See how many users are connected and if they are active/focused
+- � **Dockerized** - Full-stack containerization with security best practices (non-root)
+- �👁️ **Presence Tracking** - See how many users are connected and if they are active/focused
 - 🔒 **Secure Execution** - Client-side code runs in isolated Web Workers and Pyodide sandboxes
 - 🛡️ **Hardened Server** - Rate limiting, CSP, and security headers enabled
 - 🌐 **Multiple Languages** - Support for JavaScript, Python, and more
 - 🎨 **Dark/Light Theme** - Toggle between themes with localStorage persistence
 - ⚡ **Instant Updates** - Changes appear immediately for all connected users
+
+## 🐳 Docker Support
+
+Build and run the application in a secure container:
+
+```bash
+# Build
+docker build -t coding-interview-app .
+
+# Run (exposed on port 3000)
+docker run -p 3000:3000 coding-interview-app
+```
 
 ## Tech Stack
 

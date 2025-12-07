@@ -14,6 +14,11 @@ import { Server } from 'socket.io';
 import cors from 'cors';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 import sessionRoutes from './routes/sessions.js';
 import { registerSocketHandlers } from './socket/handlers.js';
@@ -71,6 +76,20 @@ app.use('/api/sessions', sessionRoutes);
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
+
+// Serve frontend static files in production
+if (process.env.NODE_ENV === 'production') {
+  const distPath = path.join(__dirname, '../../client/dist');
+  app.use(express.static(distPath));
+
+  // Handle SPA routing - return index.html for unknown paths (excluding API)
+  app.get('*', (req, res, next) => {
+    if (req.path.startsWith('/api')) {
+      return next();
+    }
+    res.sendFile(path.join(distPath, 'index.html'));
+  });
+}
 
 // 404 handler
 app.use((req, res) => {

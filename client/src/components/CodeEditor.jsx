@@ -108,6 +108,12 @@ function CodeEditor({ value, onChange, language, disabled = false }) {
             glyphMargin: false,
             folding: true,
             
+            // Layout & UX
+            fixedOverflowWidgets: true, // Crucial for clean widget rendering
+            codeLens: false, // Remove "Run | Debug" noise
+            lightbulb: { enabled: false }, // Remove quick fix lightbulb noise
+            overviewRulerBorder: false, // Cleaner UI
+            
             // Behavior
             automaticLayout: true,
             tabSize: 2,
