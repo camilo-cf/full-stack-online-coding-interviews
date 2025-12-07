@@ -121,3 +121,13 @@
 [data-theme="light"] .code-editor__header {
   background: var(--color-bg-tertiary);
 }
+
+/* Fix for Monaco Editor visible textarea bug */
+.monaco-editor .ime-text-area {
+  opacity: 0 !important;
+  z-index: -1 !important;
+  width: 0 !important;
+  height: 0 !important;
+  visibility: hidden !important;
+  position: absolute !important;
+}
